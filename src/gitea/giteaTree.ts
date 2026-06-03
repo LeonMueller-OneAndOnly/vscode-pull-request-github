@@ -55,7 +55,7 @@ export class GiteaPullRequestsProvider implements vscode.TreeDataProvider<GiteaT
 	async getChildren(element?: GiteaTreeItem): Promise<GiteaTreeItem[]> {
 		if (!element) {
 			if (!this.matches.length) {
-				return [new MessageNode('No configured Gitea remotes found')];
+				return [new MessageNode('Sign in to Gitea to show pull request repositories')];
 			}
 			return this.matches.map(match => new RepositoryNode(match));
 		}

@@ -7,7 +7,7 @@ import { Buffer } from 'buffer';
 import fetch from 'cross-fetch';
 import { getGiteaInstances, GiteaInstance } from './config';
 import { Repository } from '../api/api';
-import { parseRepositoryRemotes, Remote } from '../common/remote';
+import { parseRemote, parseRepositoryRemotes, Remote } from '../common/remote';
 
 export interface GiteaRepositoryMatch {
 	repository: Repository;
@@ -19,7 +19,8 @@ export interface GiteaRepositoryMatch {
 
 export async function findGiteaRepository(repository: Repository): Promise<GiteaRepositoryMatch | undefined> {
 	const instances = await getGiteaInstances();
-	for (const remote of parseRepositoryRemotes(repository)) {
+	const remotes = await getRepositoryRemotes(repository);
+	for (const remote of remotes) {
 		const matchingInstance = instances.find(instance => instance.host === remote.host.toLocaleLowerCase());
 		if (matchingInstance && remote.owner && remote.repositoryName) {
 			return {
@@ -32,7 +33,7 @@ export async function findGiteaRepository(repository: Repository): Promise<Gitea
 		}
 	}
 
-	for (const remote of parseRepositoryRemotes(repository)) {
+	for (const remote of remotes) {
 		if (!remote.owner || !remote.repositoryName || isGitHubHost(remote.host)) {
 			continue;
 		}
@@ -53,6 +54,34 @@ export async function findGiteaRepository(repository: Repository): Promise<Gitea
 		}
 	}
 	return undefined;
+}
+
+async function getRepositoryRemotes(repository: Repository): Promise<Remote[]> {
+	const remotes = parseRepositoryRemotes(repository);
+	try {
+		for (const config of await repository.getConfigs()) {
+			const match = /^remote\.([^.]+)\.url$/i.exec(config.key);
+			if (!match) {
+				continue;
+			}
+			const remote = parseRemote(match[1], config.value);
+			if (remote) {
+				remotes.push(remote);
+			}
+		}
+	} catch {
+		// Fall back to the VS Code Git API remotes when Git config is unavailable.
+	}
+
+	const seen = new Set<string>();
+	return remotes.filter(remote => {
+		const key = `${remote.remoteName}/${remote.host}/${remote.owner}/${remote.repositoryName}`.toLocaleLowerCase();
+		if (seen.has(key)) {
+			return false;
+		}
+		seen.add(key);
+		return true;
+	});
 }
 
 function isGitHubHost(host: string): boolean {
