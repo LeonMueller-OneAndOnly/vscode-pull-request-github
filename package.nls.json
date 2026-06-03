@@ -1,6 +1,6 @@
 {
-	"displayName": "GitHub Pull Requests",
-	"description": "Pull Request and Issue Provider for GitHub",
+	"displayName": "Gitea Pull Requests",
+	"description": "Pull Request provider for Gitea",
 	"githubPullRequests.pullRequestDescription.description": "The description used when creating pull requests.",
 	"githubPullRequests.pullRequestDescription.template": "Use a pull request template and commit description, or just use the commit description if no templates were found.",
 	"githubPullRequests.pullRequestDescription.commit": "Use the latest commit message only.",
@@ -209,7 +209,7 @@
 	"view.pr.status.github.name": "Changes In Pull Request",
 	"view.github.active.pull.request.name": "Review Pull Request",
 	"view.github.active.pull.request.welcome.name": "Active Pull Request",
-	"command.pull.request.category": "GitHub Pull Requests",
+	"command.pull.request.category": "Gitea Pull Requests",
 	"command.pr.create.title": "Create Pull Request",
 	"command.pr.pick.title": "Checkout Pull Request",
 	"command.pr.openChanges.title": "Open Changes",

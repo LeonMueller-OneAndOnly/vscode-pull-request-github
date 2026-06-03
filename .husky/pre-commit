@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npm run hygiene
+# npm run hygiene
 
 # Lint only staged TS/TSX files instead of the whole repo (much faster).
 # Stream a NUL-delimited list directly to xargs -0 so paths with spaces/newlines

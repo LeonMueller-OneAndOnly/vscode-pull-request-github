@@ -1,14 +1,13 @@
 {
-	"name": "vscode-pull-request-github",
+	"name": "vscode-pull-request-gitea",
 	"displayName": "%displayName%",
 	"description": "%description%",
-	"icon": "resources/icons/github_logo.png",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-pull-request-github"
+		"url": "https://gitea.com/gitea/vscode-pull-request-gitea"
 	},
 	"bugs": {
-		"url": "https://github.com/Microsoft/vscode-pull-request-github/issues"
+		"url": "https://gitea.com/gitea/vscode-pull-request-gitea/issues"
 	},
 	"enabledApiProposals": [
 		"activeComment",
@@ -42,30 +41,17 @@
 		"treeViewMarkdownMessage"
 	],
 	"version": "0.146.0",
-	"publisher": "GitHub",
+	"publisher": "Gitea",
 	"engines": {
 		"node": ">=20",
 		"vscode": "^1.121.0"
 	},
 	"categories": [
 		"Other",
-		"AI",
-		"Chat"
-	],
-	"extensionDependencies": [
-		"vscode.github-authentication"
+		"SCM Providers"
 	],
 	"activationEvents": [
-		"onStartupFinished",
-		"onFileSystem:newIssue",
-		"onFileSystem:pr",
-		"onFileSystem:githubpr",
-		"onFileSystem:githubcommit",
-		"onFileSystem:review",
-		"onWebviewPanel:IssueOverview",
-		"onWebviewPanel:PullRequestOverview",
-		"onChatContextProvider:githubpr",
-		"onChatContextProvider:githubissue"
+		"onStartupFinished"
 	],
 	"browser": "./dist/browser/extension",
 	"l10n": "./dist/browser/extension",
@@ -91,8 +77,30 @@
 		],
 		"configuration": {
 			"type": "object",
-			"title": "GitHub Pull Requests",
+			"title": "Gitea Pull Requests",
 			"properties": {
+				"giteaPullRequests.instances": {
+					"type": "array",
+					"default": [],
+					"scope": "resource",
+					"items": {
+						"type": "object",
+						"required": [
+							"url"
+						],
+						"properties": {
+							"url": {
+								"type": "string",
+								"description": "Base URL of a Gitea instance, for example https://gitea.example.com."
+							},
+							"token": {
+								"type": "string",
+								"description": "Personal access token for the Gitea instance. For the MVP this is read from settings; SecretStorage should be used later."
+							}
+						}
+					},
+					"markdownDescription": "Configured Gitea instances used to match Git remotes and access pull requests."
+				},
 				"githubPullRequests.pullRequestTitle": {
 					"deprecationMessage": "The pull request title now uses the same defaults as GitHub, and can be edited before create.",
 					"type": "string",
@@ -882,105 +890,68 @@
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "github-pull-requests",
-					"title": "%view.github.pull.requests.name%",
-					"icon": "$(github)"
-				},
-				{
-					"id": "github-pull-request",
-					"title": "%view.github.pull.request.name%",
+					"id": "gitea-pull-requests",
+					"title": "Gitea Pull Requests",
 					"icon": "$(git-pull-request)"
 				}
 			]
 		},
 		"views": {
-			"github-pull-requests": [
+			"gitea-pull-requests": [
 				{
-					"id": "github:login",
-					"name": "%view.github.login.name%",
-					"when": "ReposManagerStateContext == NeedsAuthentication",
+					"id": "gitea:pullRequests",
+					"name": "Pull Requests",
 					"icon": "$(git-pull-request)"
 				},
 				{
-					"id": "pr:github",
-					"name": "%view.pr.github.name%",
-					"when": "ReposManagerStateContext != NeedsAuthentication && !github:resolvingConflicts",
-					"icon": "$(github-inverted)",
-					"accessibilityHelpContent": "%view.pr.github.accessibilityHelpContent%"
-				},
-				{
-					"id": "issues:github",
-					"name": "%view.issues.github.name%",
-					"when": "ReposManagerStateContext != NeedsAuthentication && !github:resolvingConflicts",
-					"icon": "$(issues)",
-					"accessibilityHelpContent": "%view.pr.github.accessibilityHelpContent%"
-				},
-				{
-					"id": "notifications:github",
-					"name": "%view.notifications.github.name%",
-					"when": "ReposManagerStateContext != NeedsAuthentication && !github:resolvingConflicts && (remoteName != codespaces || !isWeb)",
-					"icon": "$(bell)",
-					"accessibilityHelpContent": "%view.pr.github.accessibilityHelpContent%",
-					"visibility": "collapsed"
-				},
-				{
-					"id": "github:conflictResolution",
-					"name": "%view.github.conflictResolution.name%",
-					"when": "github:resolvingConflicts",
-					"icon": "$(git-merge)"
-				}
-			],
-			"github-pull-request": [
-				{
-					"id": "github:createPullRequestWebview",
-					"type": "webview",
-					"name": "%view.github.create.pull.request.name%",
-					"when": "github:createPullRequest || github:revertPullRequest",
-					"icon": "$(git-pull-request-create)",
-					"visibility": "visible",
-					"initialSize": 2
-				},
-				{
-					"id": "github:compareChangesFiles",
-					"name": "%view.github.compare.changes.name%",
-					"when": "github:createPullRequest",
-					"icon": "$(git-compare)",
-					"visibility": "visible",
-					"initialSize": 1
-				},
-				{
-					"id": "github:compareChangesCommits",
-					"name": "%view.github.compare.changesCommits.name%",
-					"when": "github:createPullRequest",
-					"icon": "$(git-compare)",
-					"visibility": "visible",
-					"initialSize": 1
-				},
-				{
-					"id": "prStatus:github",
-					"name": "%view.pr.status.github.name%",
-					"when": "github:inReviewMode && !github:createPullRequest && !github:revertPullRequest",
-					"icon": "$(diff-multiple)",
-					"visibility": "visible",
-					"initialSize": 3
-				},
-				{
-					"id": "github:activePullRequest",
-					"type": "webview",
-					"name": "%view.github.active.pull.request.name%",
-					"when": "github:inReviewMode && github:focusedReview && !github:createPullRequest && !github:revertPullRequest && github:activePRCount <= 1",
-					"icon": "$(code-review)",
-					"initialSize": 2
-				},
-				{
-					"id": "github:activePullRequest:welcome",
-					"name": "%view.github.active.pull.request.welcome.name%",
-					"when": "!github:stateValidated && github:focusedReview",
-					"icon": "$(git-pull-request)"
+					"id": "gitea:changes",
+					"name": "Changed Files",
+					"icon": "$(diff-multiple)"
 				}
 			]
 		},
 		"commands": [
+			{
+				"command": "giteaPullRequests.refresh",
+				"title": "Refresh",
+				"category": "Gitea Pull Requests",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "giteaPullRequests.selectPullRequest",
+				"title": "Select Pull Request",
+				"category": "Gitea Pull Requests"
+			},
+			{
+				"command": "giteaPullRequests.openDiff",
+				"title": "Open Diff",
+				"category": "Gitea Pull Requests",
+				"icon": "$(compare-changes)"
+			},
+			{
+				"command": "giteaPullRequests.openInBrowser",
+				"title": "Open Pull Request in Browser",
+				"category": "Gitea Pull Requests",
+				"icon": "$(globe)"
+			},
+			{
+				"command": "giteaPullRequests.createPullRequest",
+				"title": "Create Pull Request",
+				"category": "Gitea Pull Requests",
+				"icon": "$(git-pull-request-create)"
+			},
+			{
+				"command": "giteaPullRequests.signIn",
+				"title": "Sign in to Gitea",
+				"category": "Gitea Pull Requests",
+				"icon": "$(sign-in)"
+			},
+			{
+				"command": "giteaPullRequests.signOut",
+				"title": "Sign out of Gitea",
+				"category": "Gitea Pull Requests",
+				"icon": "$(sign-out)"
+			},
 			{
 				"command": "github.api.preloadPullRequest",
 				"title": "Preload Pull Request",
@@ -2086,11 +2057,11 @@
 				},
 				{
 					"command": "pr.configureRemotes",
-					"when": "gitHubOpenRepositoryCount != 0"
+					"when": "false"
 				},
 				{
 					"command": "pr.configurePRViewlet",
-					"when": "gitHubOpenRepositoryCount != 0"
+					"when": "false"
 				},
 				{
 					"command": "pr.pick",
@@ -2146,7 +2117,7 @@
 				},
 				{
 					"command": "pr.create",
-					"when": "gitHubOpenRepositoryCount != 0 && github:authenticated"
+					"when": "false"
 				},
 				{
 					"command": "pr.pushAndCreate",
@@ -2238,7 +2209,7 @@
 				},
 				{
 					"command": "pr.closeRelatedEditors",
-					"when": "gitHubOpenRepositoryCount != 0"
+					"when": "false"
 				},
 				{
 					"command": "pr.toggleEditorCommentingOn",
@@ -2526,7 +2497,7 @@
 				},
 				{
 					"command": "pr.refreshComments",
-					"when": "gitHubOpenRepositoryCount != 0"
+					"when": "false"
 				},
 				{
 					"command": "pr.resolveConflict",
@@ -2751,6 +2722,11 @@
 			],
 			"view/title": [
 				{
+					"command": "giteaPullRequests.refresh",
+					"when": "view == gitea:pullRequests || view == gitea:changes",
+					"group": "navigation"
+				},
+				{
 					"command": "pr.create",
 					"when": "gitHubOpenRepositoryCount != 0 && github:initialized && view == pr:github",
 					"group": "navigation@1"
@@ -2902,6 +2878,16 @@
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "giteaPullRequests.openInBrowser",
+					"when": "view == gitea:pullRequests && viewItem == giteaPullRequest",
+					"group": "inline"
+				},
+				{
+					"command": "giteaPullRequests.openDiff",
+					"when": "view == gitea:changes && viewItem == giteaChangedFile",
+					"group": "inline"
+				},
 				{
 					"command": "pr.pick",
 					"when": "view == pr:github && viewItem =~ /(pullrequest(:local)?:nonactive)/",
